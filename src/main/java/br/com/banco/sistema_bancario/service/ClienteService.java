@@ -16,11 +16,11 @@ import br.com.banco.sistema_bancario.repository.ClienteRepository;
 // buscarPorId(Long id) — retorna um cliente pelo id
 // listarTodos() — retorna todos os clientes
 
-@Service
+@Service // isso faz com que o service seja injetado automaticamente na classe ClienteController
 public class ClienteService {
 
-    @Autowired
-    private ClienteRepository repository; // Injeta o ClienteRepository e chama o repository
+    @Autowired // isso faz com que o repository seja injetado automaticamente na classe ClienteService
+    private ClienteRepository clienteRepository; // Injeta o ClienteRepository e chama o repository
 
     public Cliente cadastrar(ClienteDTO dto) {
         Cliente cliente = new Cliente();
@@ -28,14 +28,14 @@ public class ClienteService {
         cliente.setCpf(dto.getCpf());
         cliente.setEmail(dto.getEmail());
         cliente.setSenha(dto.getSenha());
-        return repository.save(cliente);
+        return clienteRepository.save(cliente);
     }
 
     public List<Cliente> listarTodos() { // List<Cliente> retorna uma lista de clientes
-        return repository.findAll(); // repository.findAll() retorna uma lista de clientes
+        return clienteRepository.findAll(); // repository.findAll() retorna uma lista de clientes
     }
 
     public Cliente buscarPorId(Long id) {
-        return repository.findById(id).orElse(null); //
+        return clienteRepository.findById(id).orElse(null); //
     }
 }
