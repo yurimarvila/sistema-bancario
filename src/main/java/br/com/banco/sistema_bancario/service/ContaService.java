@@ -1,13 +1,18 @@
 package br.com.banco.sistema_bancario.service;
 
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import br.com.banco.sistema_bancario.dto.ContaDTO;
 import br.com.banco.sistema_bancario.model.Cliente;
 import br.com.banco.sistema_bancario.model.Conta;
+import br.com.banco.sistema_bancario.model.TipoTransacao;
+import br.com.banco.sistema_bancario.model.Transacao;
 import br.com.banco.sistema_bancario.repository.ClienteRepository;
 import br.com.banco.sistema_bancario.repository.ContaRepository;
+import br.com.banco.sistema_bancario.repository.TransacaoRepository;
 
 @Service
 public class ContaService {
@@ -16,6 +21,8 @@ public class ContaService {
     private ContaRepository contaRepository;
     @Autowired
     private ClienteRepository clienteRepository;
+    @Autowired
+    private TransacaoRepository transacaoRepository;
 
     public Conta criar(ContaDTO dto) {
         Cliente cliente = clienteRepository.findById(dto.getClienteId()).orElse(null);
@@ -29,7 +36,61 @@ public class ContaService {
 
         conta.setNumeroConta(String.valueOf(System.currentTimeMillis()));
         return contaRepository.save(conta);
-
     }
 
+    public Conta buscarPorId(Long id) {
+        return contaRepository.findById(id).orElse(null);
+    }
+
+    public Conta depositar(Long contaId, Double valor) {
+        Conta conta = contaRepository.findById(contaId).orElse(null);
+        double saldoAtual = conta.getSaldo();
+        double novoSaldo = saldoAtual + valor;
+        conta.setSaldo(novoSaldo);
+        contaRepository.save(conta);
+        registrarTransacao(conta, TipoTransacao.DEPOSITO, valor);
+        return conta;
+    }
+
+    public Conta sacar(Long contaId, Double valor) {
+        Conta conta = contaRepository.findById(contaId).orElse(null);
+        double saldoAtual = conta.getSaldo();
+        if (saldoAtual < valor) {
+            throw new RuntimeException("Saldo insuficiente");
+        }
+        double novoSaldo = saldoAtual - valor;
+        conta.setSaldo(novoSaldo);
+        contaRepository.save(conta);
+        registrarTransacao(conta, TipoTransacao.SAQUE, valor);
+        return conta;
+    }
+
+    public Conta tranferir(Long contaId, Double valor, Long contaDestinoId) {
+        Conta contaOrigem = contaRepository.findById(contaId).orElse(null);
+        Conta contaDestino = contaRepository.findById(contaDestinoId).orElse(null);
+
+        double saldoOrigem = contaOrigem.getSaldo();
+        double novoSaldoOrigem = saldoOrigem - valor;
+        contaOrigem.setSaldo(novoSaldoOrigem);
+        contaRepository.save(contaOrigem);
+        registrarTransacao(contaOrigem, TipoTransacao.TRANSFERENCIA, valor);
+
+        double saldoDestino = contaDestino.getSaldo();
+        double novoSaldoDestino = saldoDestino + valor;
+        contaDestino.setSaldo(novoSaldoDestino);
+        contaRepository.save(contaDestino);
+
+        registrarTransacao(contaDestino, TipoTransacao.TRANSFERENCIA, valor);
+        return contaOrigem;
+    }
+
+    private void registrarTransacao(Conta conta, TipoTransacao tipo, Double valor) {
+        Transacao transacao = new Transacao();
+        transacao.setConta(conta);
+        transacao.setTipo(tipo);
+        transacao.setValor(valor);
+        LocalDateTime dataHoraAtual = LocalDateTime.now();
+        transacao.setDataHora(dataHoraAtual);
+        transacaoRepository.save(transacao);
+    }
 }

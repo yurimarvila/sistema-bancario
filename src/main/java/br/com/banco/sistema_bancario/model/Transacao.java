@@ -15,7 +15,7 @@ public class Transacao {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 
     private Long id;
-    private String tipo;
+    private TipoTransacao tipo;
     private Double valor;
     private LocalDateTime dataHora;
     @ManyToOne
@@ -31,11 +31,11 @@ public class Transacao {
     }
 
     // tipo (Deposito, saque, tranferencia)
-    public String getTipo() {
+    public TipoTransacao getTipo() {
         return tipo;
     }
 
-    public void setTipo(String tipo) {
+    public void setTipo(TipoTransacao tipo) {
         this.tipo = tipo;
     }
 
